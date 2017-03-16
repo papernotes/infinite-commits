@@ -1,0 +1,20 @@
+{
+  "name": "Infinite Commits",
+  "version": "1.0",
+  "manifest_version": 2,
+  "description": "Infinite scroll on commit pages for GitHub",
+
+  "permissions": [
+    "https://github.com/*/*/commits/*"
+  ],
+
+  "content_scripts":[
+    {
+      "matches": [
+        "https://github.com/*/*/commits/*"
+      ],
+      "js": ["src/js/entry.js"]
+    }
+  ],
+  "web_accessible_resources": ["src/js/init.js"]
+}
