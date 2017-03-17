@@ -8,13 +8,13 @@ let commitsList = getCommitList(document);
 
 init();
 let newPagination = paginate(document);
-newPagination();
 
 
 function init() {
   document.addEventListener("scroll", debounce(checkIfButtonVisible, 300));
   addListener();
 }
+
 
 function paginate(dom) {
   let curDom = dom;
@@ -71,9 +71,12 @@ function appendList(dom, commitDate) {
   }
   else {
     let newList = [].slice.call(list.children);
-    let head = newList[1];
-    let tail = newList.slice(1, newList.length);
 
+    // save the list items
+    let head = newList[1];
+
+    // save the headers and list items after the first group
+    let tail = newList.slice(2, newList.length);
     let tailStr = "";
 
     tail.forEach(function(el) {
@@ -88,7 +91,6 @@ function appendList(dom, commitDate) {
 
 
 function appendSameDate(dom, append) {
-  // in the last commit, append to that
   let lastCommit = dom.getElementsByClassName(commitsGroupClass);
   lastCommit = lastCommit[lastCommit.length-1];
   lastCommit.innerHTML += append;
@@ -107,15 +109,14 @@ function getFirstCommitDate(list) {
 }
 
 
+// https://www.w3schools.com/xml/dom_httprequest.asp
 function requestPage(url, callback) {
   let xhttp = new XMLHttpRequest();
-
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
       callback(textToDOM(this.responseText));
     }
   };
-
   xhttp.open("GET", url, true);
   xhttp.send();
 }
