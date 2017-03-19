@@ -2,6 +2,7 @@ let listClass = "commits-listing commits-listing-padded js-navigation-container 
 let groupTitleClass = "commit-group-title";
 let commitsGroupClass = "commit-group table-list table-list-bordered";
 let baseURL = "https://github.com/";
+let footerClass = "paginate-container"
 
 let commitsList = getCommitList(document);
 
@@ -128,7 +129,7 @@ function handleButton() {
 
 
 function checkIfButtonVisible() {
-  let button = document.getElementsByClassName("paginate-container")[0];
+  let button = document.getElementsByClassName(footerClass)[0];
   if (isScrolledIntoView(button)) {
     handleButton();
   }
@@ -140,21 +141,28 @@ function addListener() {
   if (paginationButton != null) {
     paginationButton.addEventListener("click", handleButton);
   }
+  else {
+    let paginateContainer = document.getElementsByClassName(footerClass)[0];
+    paginateContainer.innerHTML = `<div class="pagination">No more commits!</div>`
+  }
 }
 
 function removeListener() {
   let paginationButton = document.getElementsByClassName("pagination")[0];
-  paginationButton.removeEventListener("click", handleButton);
+  if (paginationButton != null) {
+    paginationButton.removeEventListener("click", handleButton);
+    paginationButton.innerHTML = "No more commits!";
+  }
 }
 
 
 // http://stackoverflow.com/a/22480938
 function isScrolledIntoView(el) {
-    var elemTop = el.getBoundingClientRect().top;
-    var elemBottom = el.getBoundingClientRect().bottom;
+  let elemTop = el.getBoundingClientRect().top;
+  let elemBottom = el.getBoundingClientRect().bottom;
 
-    var isVisible = (elemTop >= 0) && (elemBottom <= window.innerHeight);
-    return isVisible;
+  let isVisible = (elemTop >= 0) && (elemBottom <= window.innerHeight);
+  return isVisible;
 }
 
 
@@ -162,7 +170,11 @@ function isScrolledIntoView(el) {
 function getAfterURL(dom) {
   let paginationButton = dom.getElementsByClassName("pagination")[0];
   if (paginationButton != null && paginationButton.children != null) {
-    return paginationButton.children[0].getAttribute("href");  
+    let afterURL = paginationButton.children[0].getAttribute("href")
+
+    // remove href for clicking
+    paginationButton.children[0].removeAttribute("href");
+    return afterURL;  
   }
   else {
     return null;
