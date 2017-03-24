@@ -3,11 +3,19 @@
   "version": "1.0",
   "manifest_version": 2,
   "description": "Infinite scroll on commit pages for GitHub",
-
   "permissions": [
-    "https://github.com/*/*/commits/*"
+    "https://github.com/*/*/commits/*",
+    "tabs"
   ],
-
+  "icons": {
+    "128": "src/icons/active128.png"
+  },
+  "browser_action": {
+    "default_icon": "src/icons/inactive128.png"
+  },
+  "background": {
+    "scripts": ["src/js/background.js"]
+  },
   "content_scripts":[
     {
       "matches": [

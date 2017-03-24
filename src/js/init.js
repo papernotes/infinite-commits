@@ -30,7 +30,7 @@ function paginate(dom) {
       requestPage(url, function(dom) {
         curDom = dom;
         firstCommitDate = appendList(dom, lastCommitDate);
-      })
+      });
     }
     else {
       removeListener();
@@ -146,6 +146,7 @@ function addListener() {
     paginateContainer.innerHTML = `<div class="pagination">No more commits!</div>`
   }
 }
+
 
 function removeListener() {
   let paginationButton = document.getElementsByClassName("pagination")[0];
