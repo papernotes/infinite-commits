@@ -4,18 +4,19 @@
   "manifest_version": 2,
   "description": "Infinite scroll on commit pages for GitHub",
   "permissions": [
-    "https://github.com/*/*/commits/*",
-    "tabs"
+    "https://github.com/*/*/commits/*"
   ],
   "icons": {
     "128": "src/icons/active128.png"
   },
   "browser_action": {
-    "default_icon": "src/icons/inactive128.png"
+    "default_icon": "src/icons/inactive128.png",
+    "default_title": "Infinite Commits"
   },
   "background": {
     "scripts": ["src/js/background.js"]
   },
+  "homepage_url": "https://github.com/papernotes",
   "content_scripts":[
     {
       "matches": [

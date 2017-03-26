@@ -1,8 +1,8 @@
-let listClass = "commits-listing commits-listing-padded js-navigation-container js-active-navigation-container";
-let groupTitleClass = "commit-group-title";
-let commitsGroupClass = "commit-group table-list table-list-bordered";
-let baseURL = "https://github.com/";
-let footerClass = "paginate-container"
+const LIST_CLASS = "commits-listing commits-listing-padded js-navigation-container js-active-navigation-container";
+const GROUP_TITLE_CLASS = "commit-group-title";
+const COMMITS_GROUP_CLASS = "commit-group table-list table-list-bordered";
+const BASE_URL = "https://github.com/";
+const FOOTER_CLASS = "paginate-container"
 
 let commitsList = getCommitList(document);
 
@@ -26,7 +26,7 @@ function paginate(dom) {
     let lastCommitDate = getLastCommitDate(getCommitList(curDom));
 
     if (afterURL != null) {
-      let url = baseURL + afterURL;
+      let url = BASE_URL + afterURL;
       requestPage(url, function(dom) {
         curDom = dom;
         firstCommitDate = appendList(dom, lastCommitDate);
@@ -92,20 +92,20 @@ function appendList(dom, commitDate) {
 
 
 function appendSameDate(dom, append) {
-  let lastCommit = dom.getElementsByClassName(commitsGroupClass);
+  let lastCommit = dom.getElementsByClassName(COMMITS_GROUP_CLASS);
   lastCommit = lastCommit[lastCommit.length-1];
   lastCommit.innerHTML += append;
 }
 
 
 function getLastCommitDate(list) {
-  let titles = list.getElementsByClassName(groupTitleClass);
+  let titles = list.getElementsByClassName(GROUP_TITLE_CLASS);
   return titles[titles.length - 1].textContent;
 }
 
 
 function getFirstCommitDate(list) {
-  let titles = list.getElementsByClassName(groupTitleClass);
+  let titles = list.getElementsByClassName(GROUP_TITLE_CLASS);
   return titles[0].textContent;
 }
 
@@ -129,7 +129,7 @@ function handleButton() {
 
 
 function checkIfButtonVisible() {
-  let button = document.getElementsByClassName(footerClass)[0];
+  let button = document.getElementsByClassName(FOOTER_CLASS)[0];
   if (isScrolledIntoView(button)) {
     handleButton();
   }
@@ -142,7 +142,7 @@ function addListener() {
     paginationButton.addEventListener("click", handleButton);
   }
   else {
-    let paginateContainer = document.getElementsByClassName(footerClass)[0];
+    let paginateContainer = document.getElementsByClassName(FOOTER_CLASS)[0];
     paginateContainer.innerHTML = `<div class="pagination">No more commits!</div>`
   }
 }
@@ -185,5 +185,5 @@ function getAfterURL(dom) {
 
 // get the future commit list to insert to container (called at page bottom, after getAfterURL)
 function getCommitList(dom) {
-  return dom.getElementsByClassName(listClass)[0];
+  return dom.getElementsByClassName(LIST_CLASS)[0];
 }
