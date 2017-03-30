@@ -159,6 +159,10 @@ function removeListener() {
 
 // http://stackoverflow.com/a/22480938
 function isScrolledIntoView(el) {
+  if (el == null) {
+    return null;
+  }
+
   let elemTop = el.getBoundingClientRect().top;
   let elemBottom = el.getBoundingClientRect().bottom;
 
