@@ -2,7 +2,8 @@ const LIST_CLASS = "commits-listing commits-listing-padded js-navigation-contain
 const GROUP_TITLE_CLASS = "commit-group-title";
 const COMMITS_GROUP_CLASS = "commit-group table-list table-list-bordered";
 const BASE_URL = "https://github.com/";
-const FOOTER_CLASS = "paginate-container"
+const FOOTER_CLASS = "paginate-container";
+const BUTTON = "pagination";
 
 let commitsList = getCommitList(document);
 
@@ -137,19 +138,19 @@ function checkIfButtonVisible() {
 
 
 function addListener() {
-  let paginationButton = document.getElementsByClassName("pagination")[0];
+  let paginationButton = document.getElementsByClassName(BUTTON)[0];
   if (paginationButton != null) {
     paginationButton.addEventListener("click", handleButton);
+    paginationButton.children[0].innerHTML = "Scroll Down or Click to Load More"
   }
   else {
-    let paginateContainer = document.getElementsByClassName(FOOTER_CLASS)[0];
-    paginateContainer.innerHTML = `<div class="pagination">No more commits!</div>`
+    paginationButton.innerHTML = "No more commits!";
   }
 }
 
 
 function removeListener() {
-  let paginationButton = document.getElementsByClassName("pagination")[0];
+  let paginationButton = document.getElementsByClassName(BUTTON)[0];
   if (paginationButton != null) {
     paginationButton.removeEventListener("click", handleButton);
     paginationButton.innerHTML = "No more commits!";
@@ -173,7 +174,7 @@ function isScrolledIntoView(el) {
 
 // get the upcoming content and return it (called at page bottom)
 function getAfterURL(dom) {
-  let paginationButton = dom.getElementsByClassName("pagination")[0];
+  let paginationButton = dom.getElementsByClassName(BUTTON)[0];
   if (paginationButton != null && paginationButton.children != null) {
     let afterURL = paginationButton.children[0].getAttribute("href")
 
