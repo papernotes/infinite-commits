@@ -28,7 +28,9 @@ function paginate(dom) {
 
     if (afterURL != null) {
       let url = BASE_URL + afterURL;
+      showLoader();
       requestPage(url, function(dom) {
+        hideLoader();
         curDom = dom;
         firstCommitDate = appendList(dom, lastCommitDate);
       });
@@ -134,6 +136,26 @@ function checkIfButtonVisible() {
   if (isScrolledIntoView(button)) {
     handleButton();
   }
+}
+
+
+function showLoader() {
+  let paginationButton = document.getElementsByClassName(BUTTON)[0];
+
+  let loaderContainer = document.createElement("div");
+  loaderContainer.className = "loader-container";
+  let loader = document.createElement("div");
+  loader.className = "loader";
+
+  loaderContainer.appendChild(loader);
+  paginationButton.parentNode.appendChild(loaderContainer);
+}
+
+
+function hideLoader() {
+  let paginationButton = document.getElementsByClassName(BUTTON)[0];
+  let loader = document.getElementsByClassName("loader")[0];
+  loader.remove();
 }
 
 

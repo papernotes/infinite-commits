@@ -22,7 +22,8 @@
       "matches": [
         "https://github.com/*/*/commits/*"
       ],
-      "js": ["src/js/entry.js"]
+      "js": ["src/js/entry.js"],
+      "css": ["src/css/loader.css"]
     }
   ],
   "web_accessible_resources": ["src/js/init.js"]
