@@ -21,8 +21,12 @@ function init() {
 function paginate(dom) {
   let curDom = dom;
   let lastCommitDate;
+  let loading = false;
 
   return function() {
+    if (loading) return;
+    loading = true;
+
     let afterURL = getAfterURL(curDom);
     let lastCommitDate = getLastCommitDate(getCommitList(curDom));
 
@@ -30,6 +34,7 @@ function paginate(dom) {
       let url = BASE_URL + afterURL;
       showLoader();
       requestPage(url, function(dom) {
+        loading = false;
         hideLoader();
         curDom = dom;
         firstCommitDate = appendList(dom, lastCommitDate);
