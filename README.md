@@ -1,2 +1,2 @@
 # infinite-commits
-Infinite scroll on commit pages for GitHub
+A Chrome extension for infinite scrolling on GitHub's commit pages.

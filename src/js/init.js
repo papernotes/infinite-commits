@@ -31,14 +31,16 @@ function paginate(dom) {
     if (loading) return;
     loading = true;
 
-
     let afterURL = getAfterURL(curDom);
     let lastCommitDate = getLastCommitDate(getCommitList(curDom));
 
     if (afterURL != null) {
       let url = BASE_URL + afterURL;
       showLoader();
-      let timer = setTimeout(() => handleTimeout(), 5000);
+      let timer = setTimeout(() => {
+        loading = false;
+        handleTimeout();
+      }, 5000);
 
       requestPage(url, dom => {
         resetTimeout(timer);
