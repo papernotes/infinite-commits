@@ -5,6 +5,10 @@ const BASE_URL = "https://github.com/";
 const FOOTER_CLASS = "paginate-container";
 const BUTTON = "pagination";
 
+const PAGINATION_STRING = "Scroll Down or Click to Load More";
+const END_PAGINATION_STRING = "No more commits!";
+const TIMEOUT_STRING = "Request taking a long time! Click to try again.";
+
 let commitsList = getCommitList(document);
 
 
@@ -14,7 +18,7 @@ let newPagination = paginate(document);
 
 function init() {
   document.addEventListener("scroll", debounce(checkIfButtonVisible, 300));
-  addListener();
+  addButtonClickListener();
 }
 
 
@@ -23,9 +27,10 @@ function paginate(dom) {
   let lastCommitDate;
   let loading = false;
 
-  return function() {
+  return () => {
     if (loading) return;
     loading = true;
+
 
     let afterURL = getAfterURL(curDom);
     let lastCommitDate = getLastCommitDate(getCommitList(curDom));
@@ -33,7 +38,10 @@ function paginate(dom) {
     if (afterURL != null) {
       let url = BASE_URL + afterURL;
       showLoader();
-      requestPage(url, function(dom) {
+      let timer = setTimeout(() => handleTimeout(), 5000);
+
+      requestPage(url, dom => {
+        resetTimeout(timer);
         loading = false;
         hideLoader();
         curDom = dom;
@@ -41,18 +49,18 @@ function paginate(dom) {
       });
     }
     else {
-      removeListener();
+      removeButtonClickListener();
     }
-  }
+  };
 }
 
 
 // underscore.js debounce
 function debounce(func, wait, immediate) {
   var timeout;
-  return function() {
+  return () => {
     var context = this, args = arguments;
-    var later = function() {
+    var later = () => {
       timeout = null;
       if (!immediate) func.apply(context, args);
     };
@@ -68,7 +76,7 @@ function textToDOM(str) {
   var parser = new DOMParser();
   var htmlDoc = parser.parseFromString(str, "text/html");
   return htmlDoc;
-};
+}
 
 
 function appendList(dom, commitDate) {
@@ -88,9 +96,7 @@ function appendList(dom, commitDate) {
     let tail = newList.slice(2, newList.length);
     let tailStr = "";
 
-    tail.forEach(function(el) {
-      tailStr += el.outerHTML;
-    });
+    tail.forEach(el => tailStr += el.outerHTML);
 
     appendSameDate(document, head.innerHTML);
     commitsList.innerHTML += tailStr;
@@ -136,6 +142,27 @@ function handleButton() {
 }
 
 
+function handleTimeout() {
+  let paginationButton = document.getElementsByClassName(BUTTON)[0];
+  if (paginationButton != null) {
+    paginationButton.addEventListener("click", handleButton);
+    paginationButton.children[0].innerHTML = TIMEOUT_STRING;
+  }
+  let loader = document.getElementsByClassName("loader")[0];
+  loader.style.borderTop = "16px solid #db3434";
+}
+
+
+function resetTimeout(timer) {
+  clearTimeout(timer);
+  let paginationButton = document.getElementsByClassName(BUTTON)[0];
+  if (paginationButton != null) {
+    paginationButton.addEventListener("click", handleButton);
+    paginationButton.children[0].innerHTML = PAGINATION_STRING;
+  }
+}
+
+
 function checkIfButtonVisible() {
   let button = document.getElementsByClassName(FOOTER_CLASS)[0];
   if (isScrolledIntoView(button)) {
@@ -164,23 +191,23 @@ function hideLoader() {
 }
 
 
-function addListener() {
+function addButtonClickListener() {
   let paginationButton = document.getElementsByClassName(BUTTON)[0];
   if (paginationButton != null) {
     paginationButton.addEventListener("click", handleButton);
-    paginationButton.children[0].innerHTML = "Scroll Down or Click to Load More"
+    paginationButton.children[0].innerHTML = PAGINATION_STRING;
   }
   else {
-    paginationButton.innerHTML = "No more commits!";
+    paginationButton.innerHTML = END_PAGINATION_STRING;
   }
 }
 
 
-function removeListener() {
+function removeButtonClickListener() {
   let paginationButton = document.getElementsByClassName(BUTTON)[0];
   if (paginationButton != null) {
     paginationButton.removeEventListener("click", handleButton);
-    paginationButton.innerHTML = "No more commits!";
+    paginationButton.innerHTML = END_PAGINATION_STRING;
   }
 }
 
@@ -203,7 +230,7 @@ function isScrolledIntoView(el) {
 function getAfterURL(dom) {
   let paginationButton = dom.getElementsByClassName(BUTTON)[0];
   if (paginationButton != null && paginationButton.children != null) {
-    let afterURL = paginationButton.children[0].getAttribute("href")
+    let afterURL = paginationButton.children[0].getAttribute("href");
 
     // remove href for clicking
     paginationButton.children[0].removeAttribute("href");
