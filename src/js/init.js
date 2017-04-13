@@ -26,12 +26,13 @@ function paginate(dom) {
   let curDom = dom;
   let lastCommitDate;
   let loading = false;
+  let afterURL = getAfterURL(curDom);
 
   return () => {
+    hideLoader();
     if (loading) return;
     loading = true;
 
-    let afterURL = getAfterURL(curDom);
     let lastCommitDate = getLastCommitDate(getCommitList(curDom));
 
     if (afterURL != null) {
@@ -48,6 +49,7 @@ function paginate(dom) {
         hideLoader();
         curDom = dom;
         firstCommitDate = appendList(dom, lastCommitDate);
+        afterURL = getAfterURL(curDom);
       });
     }
     else {
@@ -188,8 +190,8 @@ function showLoader() {
 
 function hideLoader() {
   let paginationButton = document.getElementsByClassName(BUTTON)[0];
-  let loader = document.getElementsByClassName("loader")[0];
-  loader.remove();
+  let loader = document.getElementsByClassName("loader-container")[0];
+  if (loader != null) loader.remove();
 }
 
 
