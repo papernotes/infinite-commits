@@ -16,7 +16,7 @@
   "background": {
     "scripts": ["src/js/background.js"]
   },
-  "homepage_url": "https://github.com/papernotes",
+  "homepage_url": "https://github.com/papernotes/infinite-commits",
   "content_scripts":[
     {
       "matches": [
