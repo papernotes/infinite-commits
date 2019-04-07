@@ -1,252 +1,367 @@
-const LIST_CLASS = "commits-listing commits-listing-padded js-navigation-container js-active-navigation-container";
-const GROUP_TITLE_CLASS = "commit-group-title";
-const COMMITS_GROUP_CLASS = "commit-group table-list table-list-bordered";
-const BASE_URL = "https://github.com/";
+const COMMIT_LIST_CLASS = "commits-listing commits-listing-padded js-navigation-container js-active-navigation-container";
 const FOOTER_CLASS = "paginate-container";
-const BUTTON = "pagination";
+const BUTTON_CLASS = "btn btn-outline BtnGroup-item";
+const GROUP_TITLE_CLASS = "commit-group-title";
+const TIMEOUT_STRING = "Request took to long! Click to try again.";
 
-const PAGINATION_STRING = "Scroll Down or Click to Load More";
-const END_PAGINATION_STRING = "No more commits!";
-const TIMEOUT_STRING = "Request taking a long time! Click to try again.";
+let commitList;
+let newPagination;
+let isLoading = false;
 
-let commitsList = getCommitList(document);
+// handle user landing on commits page
+if(shouldInit()) {
+    init();
+}
+document.addEventListener("scroll", debounce(shouldPaginate, 300));
 
+//handle user lands on github and navigates to commits page
+document.addEventListener("pjax:end", function() {
+    if (shouldInit()) {
+        init();
+    }
+});
 
-init();
-let newPagination = paginate(document);
+/**
+ * Determines whether script should execute based on the window url.
+ * 
+ * @returns { boolean }
+ *          True if script should execute, False otherwise.
+ */
+function shouldInit() {
+    return /https:\/\/github\.com\/[^\/]+\/[^\/]+\/commits/g.exec(window.location.href);
+}
 
-
+/**
+ * Initializes script vars.
+ */
 function init() {
-  document.addEventListener("scroll", debounce(checkIfButtonVisible, 300));
-  addButtonClickListener();
+    commitList = getCommitList(document);
+    newPagination = pagination(document);
+    hidePaginationButtons();
 }
 
+/**
+ * Loads and appends the commit list of the next url specified by getOlderURL().
+ * 
+ * @param   { Document } dom
+ *          The Document object from which, all operations will be done.
+ */
+function pagination(dom) {
+    let currDom = dom;
+    let olderCommitsUrl = getOlderURL(currDom);
+    let lastCommitDate = getLastCommitDate(getCommitList(currDom));
 
-function paginate(dom) {
-  let curDom = dom;
-  let lastCommitDate;
-  let loading = false;
-  let afterURL = getAfterURL(curDom);
-
-  return () => {
-    hideLoader();
-    if (loading) return;
-    loading = true;
-
-    let lastCommitDate = getLastCommitDate(getCommitList(curDom));
-
-    if (afterURL != null) {
-      let url = BASE_URL + afterURL;
-      showLoader();
-      let timer = setTimeout(() => {
-        loading = false;
-        handleTimeout();
-      }, 5000);
-
-      requestPage(url, dom => {
-        resetTimeout(timer);
-        loading = false;
+    return () => {
         hideLoader();
-        curDom = dom;
-        firstCommitDate = appendList(dom, lastCommitDate);
-        afterURL = getAfterURL(curDom);
-      });
+        if (isLoading) {
+            return;
+        }
+        isLoading = true;
+        lastCommitDate = getLastCommitDate(getCommitList(currDom))
+    
+        if (olderCommitsUrl) {
+            showLoader();
+            const timer = setTimeout(() => {
+                isLoading = false;
+                handleTimeout();
+            }, 5000);
+
+            getNextCommitList(olderCommitsUrl, dom => {
+                resetTimeout(timer);
+                isLoading = false;
+                hideLoader();
+                currDom = dom;
+                appendCommitList(dom, lastCommitDate);
+                olderCommitsUrl = getOlderURL(currDom)
+            });
+        }
     }
-    else {
-      removeButtonClickListener();
-    }
-  };
 }
 
-
-// underscore.js debounce
+/**
+ * From 'underscore.js'
+ * 
+ * Creates and returns a new debounced version of the passed function which
+ * will pospone execution until after 'wait' milliseconds have elapsed.
+ * 
+ * @param   { function } func
+ *          The function to be invoked.
+ * @param   { number } wait
+ *          The interval (in milliseconds), after which func will be re-invoked.   
+ * @param   { boolean } immediate
+ *          True if func should be invoked on the leading instead of trailing
+ *          edge of the wait interval.
+ * 
+ * @returns { function }
+ *          the debounced version of func.
+ */
 function debounce(func, wait, immediate) {
-  var timeout;
-  return () => {
-    var context = this, args = arguments;
-    var later = () => {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
+    let timeout;
+
+    return () => {
+        const context = this;
+        const args = arguments;
+        const later = () => {
+            timeout = null;
+            if (!immediate) {
+                func.apply(context, args);
+            }
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        if (immediate && !timeout) {
+            func.apply(context, args);
+        }
     };
-    var callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
 }
 
-
-function textToDOM(str) {
-  var parser = new DOMParser();
-  var htmlDoc = parser.parseFromString(str, "text/html");
-  return htmlDoc;
-}
-
-
-function appendList(dom, commitDate) {
-  list = getCommitList(dom);
-  firstCommit = getFirstCommitDate(list);
-
-  if (firstCommit !== commitDate) {
-    commitsList.innerHTML += list.innerHTML;
-  }
-  else {
-    let newList = [].slice.call(list.children);
-
-    // save the list items
-    let head = newList[1];
-
-    // save the headers and list items after the first group
-    let tail = newList.slice(2, newList.length);
-    let tailStr = "";
-
-    tail.forEach(el => tailStr += el.outerHTML);
-
-    appendSameDate(document, head.innerHTML);
-    commitsList.innerHTML += tailStr;
-  }
-  return firstCommit;
-}
-
-
-function appendSameDate(dom, append) {
-  let lastCommit = dom.getElementsByClassName(COMMITS_GROUP_CLASS);
-  lastCommit = lastCommit[lastCommit.length-1];
-  lastCommit.innerHTML += append;
-}
-
-
-function getLastCommitDate(list) {
-  let titles = list.getElementsByClassName(GROUP_TITLE_CLASS);
-  return titles[titles.length - 1].textContent;
-}
-
-
-function getFirstCommitDate(list) {
-  let titles = list.getElementsByClassName(GROUP_TITLE_CLASS);
-  return titles[0].textContent;
-}
-
-
-// https://www.w3schools.com/xml/dom_httprequest.asp
-function requestPage(url, callback) {
-  let xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      callback(textToDOM(this.responseText));
-    }
-  };
-  xhttp.open("GET", url, true);
-  xhttp.send();
-}
-
-
-function handleButton() {
-  newPagination();
-}
-
-
-function handleTimeout() {
-  let paginationButton = document.getElementsByClassName(BUTTON)[0];
-  if (paginationButton != null) {
-    paginationButton.addEventListener("click", handleButton);
-    paginationButton.children[0].innerHTML = TIMEOUT_STRING;
-  }
-  let loader = document.getElementsByClassName("loader")[0];
-  loader.style.borderTop = "16px solid #db3434";
-}
-
-
-function resetTimeout(timer) {
-  clearTimeout(timer);
-  let paginationButton = document.getElementsByClassName(BUTTON)[0];
-  if (paginationButton != null) {
-    paginationButton.addEventListener("click", handleButton);
-    paginationButton.children[0].innerHTML = PAGINATION_STRING;
-  }
-}
-
-
-function checkIfButtonVisible() {
-  let button = document.getElementsByClassName(FOOTER_CLASS)[0];
-  if (isScrolledIntoView(button)) {
-    handleButton();
-  }
-}
-
-
+/**
+ * Displays a loading animation on page.
+ */
 function showLoader() {
-  let paginationButton = document.getElementsByClassName(BUTTON)[0];
+    const bottom = document.getElementsByClassName(FOOTER_CLASS)[0];
 
-  let loaderContainer = document.createElement("div");
-  loaderContainer.className = "loader-container";
-  let loader = document.createElement("div");
-  loader.className = "loader";
+    const loaderContainer = document.createElement("div");
+    loaderContainer.className = "loader-container";
 
-  loaderContainer.appendChild(loader);
-  paginationButton.parentNode.appendChild(loaderContainer);
+    const loader = document.createElement("div");
+    loader.className = "loader";
+
+    loaderContainer.appendChild(loader);
+    bottom.appendChild(loaderContainer);
 }
 
-
+/**
+ * Hides a displayed loading animation on page.
+ */
 function hideLoader() {
-  let paginationButton = document.getElementsByClassName(BUTTON)[0];
-  let loader = document.getElementsByClassName("loader-container")[0];
-  if (loader != null) loader.remove();
+    const loader = document.getElementsByClassName("loader-container")[0];
+    if (loader) {
+        loader.remove();
+    }
 }
 
-
-function addButtonClickListener() {
-  let paginationButton = document.getElementsByClassName(BUTTON)[0];
-  if (paginationButton != null) {
-    paginationButton.addEventListener("click", handleButton);
-    paginationButton.children[0].innerHTML = PAGINATION_STRING;
-  }
-  else {
-    paginationButton.innerHTML = END_PAGINATION_STRING;
-  }
+/**
+ * Calls Paginate if the first html in document of class, FOOTER_CLASS, is
+ * completely visible.
+ */
+function shouldPaginate() {
+    const bottom = document.getElementsByClassName(FOOTER_CLASS)[0];
+    if (isScrolledIntoView(bottom)) {
+        newPagination();
+    }
 }
 
+/**
+ * Get the href of the "Older" button which should give an older commit list.
+ * 
+ * @param   { Document } dom
+ *          The dom object from which, we will grab the next commit list URL.
+ * 
+ * @returns { URL }
+ *          The URL of the next commit list to load.
+ */
+function getOlderURL(dom) {
+    const bottom = dom.getElementsByClassName(FOOTER_CLASS)[0];
+    const bottomButtons = bottom.getElementsByClassName(BUTTON_CLASS);
+    const olderButton = bottomButtons[bottomButtons.length - 1];
+    const olderURL = olderButton.href;
 
-function removeButtonClickListener() {
-  let paginationButton = document.getElementsByClassName(BUTTON)[0];
-  if (paginationButton != null) {
-    paginationButton.removeEventListener("click", handleButton);
-    paginationButton.innerHTML = END_PAGINATION_STRING;
-  }
+    return olderURL;
 }
 
+/**
+ * From 'https://stackoverflow.com/a/22480938'
+ * 
+ * Determines if a given element has been scrolled into view.
+ * 
+ * @param   { Element } element
+ *          The element to test.
+ * 
+ * @returns { boolean | null }
+ *          null if element is null
+ *          or
+ *          True if element is visible, False otherwise.
+ */
+function isScrolledIntoView(element) {
+    if (element == null) {
+        return null;
+    }
 
-// http://stackoverflow.com/a/22480938
-function isScrolledIntoView(el) {
-  if (el == null) {
-    return null;
-  }
+    const top = element.getBoundingClientRect().top;
+    const bottom = element.getBoundingClientRect().bottom;
 
-  let elemTop = el.getBoundingClientRect().top;
-  let elemBottom = el.getBoundingClientRect().bottom;
-
-  let isVisible = (elemTop >= 0) && (elemBottom <= window.innerHeight);
-  return isVisible;
+    return (top >= 0) && (bottom <= window.innerHeight);
 }
 
+/**
+ * Displays a retry button at bottom of page.
+ */
+function handleTimeout() {
+    const bottom = document.getElementsByClassName(FOOTER_CLASS)[0];
 
-// get the upcoming content and return it (called at page bottom)
-function getAfterURL(dom) {
-  let paginationButton = dom.getElementsByClassName(BUTTON)[0];
-  if (paginationButton != null && paginationButton.children != null) {
-    let afterURL = paginationButton.children[0].getAttribute("href");
+    const retryButton = document.createElement("button");
+    retryButton.id = "icRetryButton";
+    retryButton.className = BUTTON_CLASS;
+    retryButton.innerHTML = TIMEOUT_STRING;
+    retryButton.addEventListener("click", () => {
+        retryButton.parentNode.removeChild(retryButton);
+        newPagination();
+    });
 
-    // remove href for clicking
-    paginationButton.children[0].removeAttribute("href");
-    return afterURL;  
-  }
-  else {
-    return null;
-  }
+    bottom.appendChild(retryButton);
+
+    hideLoader();
 }
 
+/**
+ * Resets timer, hides retry button.
+ * 
+ * @param   { number } timer 
+ *          A Number, representing the ID value of the timer that is set. Use 
+ *          this value with the clearTimeout() method to cancel the timer.
+ */
+function resetTimeout(timer) {
+    clearTimeout(timer);
 
-// get the future commit list to insert to container (called at page bottom, after getAfterURL)
+    const retryButton = document.getElementById("icRetryButton");
+    if (retryButton) {
+        retryButton.parentNode.removeChild(retryButton);
+    }
+}
+
+/**
+ * Hides Older/Newer navigation buttons.
+ */
+function hidePaginationButtons() {
+    const bottom = document.getElementsByClassName(FOOTER_CLASS)[0];
+    const bottomButtons = bottom.getElementsByClassName(BUTTON_CLASS);
+    const newerButton = bottomButtons[0];
+    const olderButton = bottomButtons[bottomButtons.length - 1];
+
+    newerButton.style.visibility = "hidden";
+    olderButton.style.visibility = "hidden";
+}
+
+/**
+ * 
+ * @param   { Document } dom 
+ * @param   { string } lastCommitDate 
+ */
+function appendCommitList(dom, lastCommitDate) {
+    const olderCommitList = getCommitList(dom);
+    const firstCommitDate = getFirstCommitDate(commitList);
+
+    // commits on next page are of a different date
+    if (firstCommitDate !== lastCommitDate) {
+        // don't need to aggregate dates, so just append html
+        commitList.innerHTML += olderCommitList.innerHTML;
+    } else {
+        let newList = [].slice.call(olderCommitList.childrent);
+
+        // save the commit list items
+        let head = newList[1];
+
+        // save the headers and list items after the first group
+        let tail = newList.slice(2, newList.length);
+        let tailStr = "";
+        
+        for (const element of tail) {
+            tailStr += element.outerHTML;
+        }
+
+        appendSameDate(document, head.innerHTML);
+        commitList.innerHTML += tailStr;
+    }
+}
+
+/**
+ * Aggregates commit date html and appends content accordingly.
+ * 
+ * @param   { Document } dom
+ *          The document object containing the commit list we will be appending
+ * t        to.
+ * @param   { Node } append
+ *          The html to append.
+ */
+function appendSameDate(dom, append) {
+    let lastCommit = dom.getElementsByClassName(COMMITS_GROUP_CLASS);
+    lastCommit = lastCommit[lastCommit.length-1];
+    lastCommit.innerHTML += append;
+  }
+
+/**
+ * Gets the commit list html from the given Document object.
+ * 
+ * @param   { Document } dom
+ *          The dom object from which, the commit list should be grabbed.
+ * 
+ * @returns { Node }
+ *          The first element, having class COMMIT_LIST_CLASS found in
+ *          dom, if any.
+ */
 function getCommitList(dom) {
-  return dom.getElementsByClassName(LIST_CLASS)[0];
+    return dom.getElementsByClassName(COMMIT_LIST_CLASS)[0];
 }
+
+/**
+ * Parses a given Document Node for a last commit date string.
+ * 
+ * @param   { Node } commitListNode
+ *          The commit list node object.
+ * 
+ * @returns { string }
+ *          The text content representing last group commit date.
+ */
+function getLastCommitDate(commitListNode) {
+    let titles = commitListNode.getElementsByClassName(GROUP_TITLE_CLASS);
+    return titles[titles.length - 1].textContent;
+}
+
+/**
+ * Parses a given Document Node for a first commit date string.
+ * 
+ * @param   { Node } commitListNode
+ *          The commit list node object.
+ * 
+ * @returns { string }
+ *          The text content representing last group commit date.
+ */
+function getFirstCommitDate(commitListNode) {
+    let titles = commitListNode.getElementsByClassName(GROUP_TITLE_CLASS);
+    return titles[0].textContent;
+  }
+
+/**
+ * From 'https://www.w3schools.com/xml/dom_httprequest.asp'
+ *
+ * Makes a GET request for older commits page. 
+ * 
+ * @param   { URL } url
+ *          The url to request.  
+ * @param   { function } callback
+ *          A callback function to handle the results of the request. 
+ */
+function getNextCommitList(url, callback) {
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            callback(textToDOM(this.responseText));
+        }
+    };
+    xhttp.open("GET", url, true);
+    xhttp.send();
+}
+
+/**
+ * Parses text at html
+ * 
+ * @param   { string } text 
+ * 
+ * @returns { } TODOTODOTODO
+ */
+function textToDOM(text) {
+    var parser = new DOMParser();
+    var htmlDoc = parser.parseFromString(text, "text/html");
+    return htmlDoc;
+  }
